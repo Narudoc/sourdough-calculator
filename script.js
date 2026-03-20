@@ -220,29 +220,6 @@ function renderTargetCalculator() {
   message.textContent = `직접 넣을 물은 ${formatWeight(directWater)}이며, 예상 총 반죽 중량은 ${formatWeight(projectedWeight)}입니다.`;
 }
 
-function distributeDirectWater(totalDirectWater, waterA, bassinage) {
-  const currentDirectWater = waterA + bassinage;
-
-  if (totalDirectWater < 0) {
-    return null;
-  }
-
-  if (!currentDirectWater) {
-    return {
-      waterA: totalDirectWater,
-      bassinage: 0,
-    };
-  }
-
-  const waterARatio = waterA / currentDirectWater;
-  const recommendedWaterA = totalDirectWater * waterARatio;
-
-  return {
-    waterA: recommendedWaterA,
-    bassinage: totalDirectWater - recommendedWaterA,
-  };
-}
-
 function getOppositeLevainType(type) {
   return type === "stiff" ? "liquid" : "stiff";
 }
@@ -272,21 +249,20 @@ function renderConverter() {
   const extras = getExtras("convertExtras");
 
   const sourceLevain = getLevainBreakdown(levainWeight, sourceType);
-  const targetLevainFlour = sourceLevain.flour;
-  const targetLevain = getLevainBreakdown(
-    targetLevainFlour * (1 + (LEVAIN_TYPES[targetType] || LEVAIN_TYPES.liquid).hydration),
-    targetType
-  );
+  const targetLevain = getLevainBreakdown(levainWeight, targetType);
 
   const extrasTotal = extras.reduce((sum, item) => sum + item.weight, 0);
-  const totalFlour = flour + sourceLevain.flour;
-  const totalWater = waterA + bassinage + sourceLevain.water;
-  const hydration = totalFlour ? (totalWater / totalFlour) * 100 : 0;
+  const sourceTotalFlour = flour + sourceLevain.flour;
+  const sourceTotalWater = waterA + bassinage + sourceLevain.water;
+  const hydration = sourceTotalFlour ? (sourceTotalWater / sourceTotalFlour) * 100 : 0;
+  const targetTotalFlour = flour + targetLevain.flour;
+  const targetTotalWater = targetTotalFlour * (hydration / 100);
   const currentDirectWater = waterA + bassinage;
-  const convertedDirectWater = totalWater - targetLevain.water;
+  const convertedDirectWater = targetTotalWater - targetLevain.water;
   const waterDelta = convertedDirectWater - currentDirectWater;
-  const recommendedSplit = distributeDirectWater(convertedDirectWater, waterA, bassinage);
-  const totalWeight = flour + currentDirectWater + salt + levainWeight + extrasTotal;
+  const convertedWaterA = convertedDirectWater - bassinage;
+  const currentTotalWeight = flour + currentDirectWater + salt + levainWeight + extrasTotal;
+  const convertedTotalWeight = flour + convertedDirectWater + salt + levainWeight + extrasTotal;
 
   updateText("convertHydration", formatPercent(hydration));
   updateText("convertTargetLevainWeight", formatWeight(targetLevain.weight));
@@ -299,13 +275,13 @@ function renderConverter() {
   updateText("convertTargetLevainWater", formatWeight(targetLevain.water));
   updateText(
     "convertFormula",
-    `르방 속 밀가루 ${formatWeight(sourceLevain.flour)}는 유지하고, 르방 속 물 차이만큼 직접 물을 ${formatSignedWeight(waterDelta)} 보정합니다.`
+    `르방 총량 ${formatWeight(levainWeight)}과 바시나쥬 ${formatWeight(bassinage)}은 그대로 두고, 목표 총 수분율 ${formatPercent(hydration)}을 유지하도록 물 A만 ${formatSignedWeight(convertedWaterA - waterA)} 조정합니다.`
   );
 
   const message = document.getElementById("convertMessage");
   message.classList.remove("warning");
 
-  if (!totalFlour) {
+  if (!sourceTotalFlour) {
     updateText("convertRecommendedWaterA", "0 g");
     updateText("convertRecommendedBassinage", "0 g");
     message.textContent = "기준 배합을 입력하면 르방 타입 변환값을 계산합니다.";
@@ -315,21 +291,21 @@ function renderConverter() {
   if (sourceType === targetType) {
     updateText("convertRecommendedWaterA", formatWeight(waterA));
     updateText("convertRecommendedBassinage", formatWeight(bassinage));
-    message.textContent = `같은 르방 타입이 선택되어 있어 현재 배합과 같습니다. 총 반죽 중량은 ${formatWeight(totalWeight)}로 유지됩니다.`;
+    message.textContent = `같은 르방 타입이 선택되어 있어 현재 배합과 같습니다. 총 반죽 중량은 ${formatWeight(currentTotalWeight)}입니다.`;
     return;
   }
 
-  if (!recommendedSplit) {
+  if (convertedDirectWater < 0 || convertedWaterA < 0) {
     updateText("convertRecommendedWaterA", "계산 불가");
-    updateText("convertRecommendedBassinage", "계산 불가");
-    message.textContent = `이 배합은 ${targetLevain.label}로 바꾸면 직접 넣을 물이 음수가 됩니다. 르방 비율을 줄이거나 전체 수분율을 높여야 합니다.`;
+    updateText("convertRecommendedBassinage", formatWeight(bassinage));
+    message.textContent = `이 배합은 바시나쥬 ${formatWeight(bassinage)}을 고정하면 물 A가 음수가 되어 변환할 수 없습니다. 바시나쥬를 줄이거나 전체 수분율을 높여야 합니다.`;
     message.classList.add("warning");
     return;
   }
 
-  updateText("convertRecommendedWaterA", formatWeight(recommendedSplit.waterA));
-  updateText("convertRecommendedBassinage", formatWeight(recommendedSplit.bassinage));
-  message.textContent = `변환 후 르방은 ${formatWeight(targetLevain.weight)}, 직접 넣는 물은 ${formatWeight(convertedDirectWater)}입니다. 물 A와 바시나쥬 비율은 기존과 같게 유지했고, 총 반죽 중량 ${formatWeight(totalWeight)}도 변하지 않습니다.`;
+  updateText("convertRecommendedWaterA", formatWeight(convertedWaterA));
+  updateText("convertRecommendedBassinage", formatWeight(bassinage));
+  message.textContent = `변환 후에도 르방은 ${formatWeight(targetLevain.weight)}, 바시나쥬는 ${formatWeight(bassinage)}으로 고정됩니다. 물 A는 ${formatWeight(convertedWaterA)}로 조정하면 되고, 예상 총 반죽 중량은 ${formatWeight(convertedTotalWeight)}입니다.`;
 }
 
 function renderAll() {
