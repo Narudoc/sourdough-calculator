@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sourdough Formula Lab</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <p class="eyebrow">Sourdough Formula Lab</p>
+        <h1>사워도우 배합을 바로 계산하는<br />두 개의 실전 계산기</h1>
+        <p class="hero-copy">
+          실제 배합 중량으로 총 수분율과 베이커스 퍼센트를 계산하고,
+          목표 수분율에 맞춰 필요한 물의 양도 역산할 수 있습니다.
+        </p>
+      </header>
+
+      <main class="calculator-layout">
+        <section class="panel">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Calculator 1</p>
+              <h2>실제 배합 계산기</h2>
+            </div>
+            <p class="section-copy">
+              직접 넣는 재료 중량을 입력하면 총 반죽 중량, 총 수분율,
+              르방 분해값과 베이커스 퍼센트를 자동으로 계산합니다.
+            </p>
+          </div>
+
+          <div class="panel-grid">
+            <div class="form-block">
+              <div class="field-grid">
+                <label class="field">
+                  <span>밀가루</span>
+                  <input id="mixFlour" type="number" min="0" step="0.1" value="1000" inputmode="decimal" />
+                </label>
+
+                <label class="field">
+                  <span>물 A</span>
+                  <input id="mixWaterA" type="number" min="0" step="0.1" value="650" inputmode="decimal" />
+                </label>
+
+                <label class="field">
+                  <span>바시나쥬 물</span>
+                  <input id="mixBassinage" type="number" min="0" step="0.1" value="50" inputmode="decimal" />
+                </label>
+
+                <label class="field">
+                  <span>소금</span>
+                  <input id="mixSalt" type="number" min="0" step="0.1" value="22" inputmode="decimal" />
+                </label>
+
+                <label class="field">
+                  <span>르방</span>
+                  <input id="mixLevain" type="number" min="0" step="0.1" value="200" inputmode="decimal" />
+                </label>
+
+                <label class="field">
+                  <span>르방 타입</span>
+                  <select id="mixLevainType">
+                    <option value="liquid">리퀴드 르방 (100%)</option>
+                    <option value="stiff">르방 뒤흐 (50%)</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="extras-card">
+                <div class="extras-head">
+                  <div>
+                    <h3>기타 부재료</h3>
+                    <p>씨앗, 올리브, 꿀, 버터 등 필요한 재료를 추가해 주세요.</p>
+                  </div>
+                  <button type="button" class="action-button" data-add-extra="mixExtras">
+                    부재료 추가
+                  </button>
+                </div>
+
+                <div id="mixExtras" class="extras-list"></div>
+                <p class="helper-copy">
+                  기타 부재료는 총 반죽 중량과 베이커스 퍼센트에는 포함되지만,
+                  별도 수분 재료로는 계산하지 않습니다.
+                </p>
+              </div>
+            </div>
+
+            <div class="results-block">
+              <div class="stat-grid">
+                <article class="stat-card">
+                  <p class="stat-label">총 반죽 중량</p>
+                  <strong id="mixTotalWeight" class="stat-value">0 g</strong>
+                </article>
+                <article class="stat-card">
+                  <p class="stat-label">총 수분율</p>
+                  <strong id="mixHydration" class="stat-value">0%</strong>
+                </article>
+                <article class="stat-card">
+                  <p class="stat-label">총 물량</p>
+                  <strong id="mixTotalWater" class="stat-value">0 g</strong>
+                </article>
+                <article class="stat-card">
+                  <p class="stat-label">총 밀가루량</p>
+                  <strong id="mixTotalFlour" class="stat-value">0 g</strong>
+                </article>
+              </div>
+
+              <article class="insight-card">
+                <div class="insight-head">
+                  <h3>르방 분해</h3>
+                  <span id="mixLevainTypeLabel" class="chip">리퀴드 르방</span>
+                </div>
+                <dl class="split-grid">
+                  <div>
+                    <dt>르방 속 밀가루</dt>
+                    <dd id="mixLevainFlour">0 g</dd>
+                  </div>
+                  <div>
+                    <dt>르방 속 물</dt>
+                    <dd id="mixLevainWater">0 g</dd>
+                  </div>
+                </dl>
+                <p id="mixLevainNote" class="helper-copy"></p>
+              </article>
+
+              <article class="table-card">
+                <div class="table-head">
+                  <h3>베이커스 퍼센트</h3>
+                  <p>총 밀가루량을 100% 기준으로 계산합니다.</p>
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>재료</th>
+                        <th>중량</th>
+                        <th>베이커스 %</th>
+                      </tr>
+                    </thead>
+                    <tbody id="mixBreakdown"></tbody>
+                  </table>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel accent-panel">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">Calculator 2</p>
+              <h2>목표 수분율 물 역산 계산기</h2>
+            </div>
+            <p class="section-copy">
+              밀가루, 소금, 르방, 기타 부재료, 목표 수분율을 입력하면
+              총 필요한 물과 직접 넣을 물의 양을 계산합니다.
+            </p>
+          </div>
+
+          <div class="panel-grid">
+            <div class="form-block">
+              <div class="field-grid">
+                <label class="field">
+                  <span>밀가루</span>
+                  <input id="targetFlour" type="number" min="0" step="0.1" value="1000" inputmode="decimal" />
+                </label>
+
+                <label class="field">
+                  <span>소금</span>
+                  <input id="targetSalt" type="number" min="0" step="0.1" value="22" inputmode="decimal" />
+                </label>
+
+                <label class="field">
+                  <span>르방</span>
+                  <input id="targetLevain" type="number" min="0" step="0.1" value="200" inputmode="decimal" />
+                </label>
+
+                <label class="field">
+                  <span>르방 타입</span>
+                  <select id="targetLevainType">
+                    <option value="liquid">리퀴드 르방 (100%)</option>
+                    <option value="stiff">르방 뒤흐 (50%)</option>
+                  </select>
+                </label>
+
+                <label class="field field-wide">
+                  <span>목표 수분율</span>
+                  <input id="targetHydration" type="number" min="0" step="0.1" value="75" inputmode="decimal" />
+                </label>
+              </div>
+
+              <div class="extras-card">
+                <div class="extras-head">
+                  <div>
+                    <h3>기타 부재료</h3>
+                    <p>총 반죽 중량 확인용으로 포함됩니다.</p>
+                  </div>
+                  <button type="button" class="action-button" data-add-extra="targetExtras">
+                    부재료 추가
+                  </button>
+                </div>
+
+                <div id="targetExtras" class="extras-list"></div>
+              </div>
+            </div>
+
+            <div class="results-block">
+              <div class="stat-grid">
+                <article class="stat-card">
+                  <p class="stat-label">목표 총 물량</p>
+                  <strong id="targetTotalWater" class="stat-value">0 g</strong>
+                </article>
+                <article class="stat-card">
+                  <p class="stat-label">직접 넣을 물</p>
+                  <strong id="targetDirectWater" class="stat-value">0 g</strong>
+                </article>
+                <article class="stat-card">
+                  <p class="stat-label">르방 속 물</p>
+                  <strong id="targetLevainWater" class="stat-value">0 g</strong>
+                </article>
+                <article class="stat-card">
+                  <p class="stat-label">총 밀가루 기준</p>
+                  <strong id="targetTotalFlour" class="stat-value">0 g</strong>
+                </article>
+              </div>
+
+              <article class="insight-card">
+                <div class="insight-head">
+                  <h3>계산 메모</h3>
+                  <span id="targetLevainTypeLabel" class="chip">리퀴드 르방</span>
+                </div>
+                <p id="targetFormula" class="formula-copy"></p>
+                <p id="targetMessage" class="message-copy"></p>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-heading">
+            <div class="section-toolbar">
+              <div>
+                <p class="section-kicker">Calculator 3</p>
+                <h2>르방 타입 변환 계산기</h2>
+              </div>
+              <button type="button" class="ghost-button" id="copyFromMix">
+                실제 배합 값 가져오기
+              </button>
+            </div>
+            <p class="section-copy">
+              현재 배합을 기준으로 리퀴드 르방과 르방 뒤흐를 서로 변환합니다.
+              르방 속 밀가루량은 유지하고, 최종 반죽 수분율이 같도록 직접 넣는
+              물을 자동으로 보정합니다.
+            </p>
+          </div>
+
+          <div class="panel-grid">
+            <div class="form-block">
+              <div class="field-grid">
+                <label class="field">
+                  <span>밀가루</span>
+                  <input id="convertFlour" type="number" min="0" step="0.1" value="1000" inputmode="decimal" />
+                </label>
+
+                <label class="field">
+                  <span>물 A</span>
+                  <input id="convertWaterA" type="number" min="0" step="0.1" value="650" inputmode="decimal" />
+                </label>
+
+                <label class="field">
+                  <span>바시나쥬 물</span>
+                  <input id="convertBassinage" type="number" min="0" step="0.1" value="50" inputmode="decimal" />
+                </label>
+
+                <label class="field">
+                  <span>소금</span>
+                  <input id="convertSalt" type="number" min="0" step="0.1" value="22" inputmode="decimal" />
+                </label>
+
+                <label class="field">
+                  <span>현재 르방</span>
+                  <input id="convertLevain" type="number" min="0" step="0.1" value="200" inputmode="decimal" />
+                </label>
+
+                <label class="field">
+                  <span>현재 르방 타입</span>
+                  <select id="convertSourceLevainType">
+                    <option value="liquid">리퀴드 르방 (100%)</option>
+                    <option value="stiff">르방 뒤흐 (50%)</option>
+                  </select>
+                </label>
+
+                <label class="field field-wide">
+                  <span>변환할 르방 타입</span>
+                  <select id="convertTargetLevainType">
+                    <option value="stiff">르방 뒤흐 (50%)</option>
+                    <option value="liquid">리퀴드 르방 (100%)</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="extras-card">
+                <div class="extras-head">
+                  <div>
+                    <h3>기타 부재료</h3>
+                    <p>총 반죽 중량 안내용으로 함께 계산합니다.</p>
+                  </div>
+                  <button type="button" class="action-button" data-add-extra="convertExtras">
+                    부재료 추가
+                  </button>
+                </div>
+
+                <div id="convertExtras" class="extras-list"></div>
+              </div>
+            </div>
+
+            <div class="results-block">
+              <div class="stat-grid">
+                <article class="stat-card">
+                  <p class="stat-label">유지되는 총 수분율</p>
+                  <strong id="convertHydration" class="stat-value">0%</strong>
+                </article>
+                <article class="stat-card">
+                  <p class="stat-label">변환 후 르방량</p>
+                  <strong id="convertTargetLevainWeight" class="stat-value">0 g</strong>
+                </article>
+                <article class="stat-card">
+                  <p class="stat-label">변환 후 직접 물</p>
+                  <strong id="convertDirectWater" class="stat-value">0 g</strong>
+                </article>
+                <article class="stat-card">
+                  <p class="stat-label">직접 물 증감량</p>
+                  <strong id="convertWaterDelta" class="stat-value">0 g</strong>
+                </article>
+                <article class="stat-card">
+                  <p class="stat-label">추천 물 A</p>
+                  <strong id="convertRecommendedWaterA" class="stat-value">0 g</strong>
+                </article>
+                <article class="stat-card">
+                  <p class="stat-label">추천 바시나쥬 물</p>
+                  <strong id="convertRecommendedBassinage" class="stat-value">0 g</strong>
+                </article>
+              </div>
+
+              <article class="insight-card">
+                <div class="insight-head">
+                  <h3>변환 메모</h3>
+                  <span id="convertModeLabel" class="chip">리퀴드 르방 → 르방 뒤흐</span>
+                </div>
+                <p id="convertFormula" class="formula-copy"></p>
+                <div class="comparison-grid">
+                  <div class="comparison-card">
+                    <h4>기존 르방</h4>
+                    <dl class="mini-split">
+                      <div>
+                        <dt>르방 속 밀가루</dt>
+                        <dd id="convertSourceLevainFlour">0 g</dd>
+                      </div>
+                      <div>
+                        <dt>르방 속 물</dt>
+                        <dd id="convertSourceLevainWater">0 g</dd>
+                      </div>
+                    </dl>
+                  </div>
+                  <div class="comparison-card">
+                    <h4>변환 후 르방</h4>
+                    <dl class="mini-split">
+                      <div>
+                        <dt>르방 속 밀가루</dt>
+                        <dd id="convertTargetLevainFlour">0 g</dd>
+                      </div>
+                      <div>
+                        <dt>르방 속 물</dt>
+                        <dd id="convertTargetLevainWater">0 g</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </div>
+                <p id="convertMessage" class="message-copy"></p>
+              </article>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <template id="extraTemplate">
+      <div class="extra-row">
+        <label class="field compact-field">
+          <span>이름</span>
+          <input class="extra-name" type="text" placeholder="예: 해바라기씨" />
+        </label>
+        <label class="field compact-field">
+          <span>중량</span>
+          <input class="extra-weight" type="number" min="0" step="0.1" value="0" inputmode="decimal" />
+        </label>
+        <button type="button" class="ghost-button remove-extra">삭제</button>
+      </div>
+    </template>
+
+    <script src="script.js"></script>
+  </body>
+</html>
