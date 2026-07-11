@@ -21,6 +21,17 @@ function clampNumber(value) {
   return numeric;
 }
 
+function normalizeNumberInput(input) {
+  if (input.value === "") {
+    return;
+  }
+
+  const numeric = Number(input.value);
+  if (!Number.isFinite(numeric) || numeric < 0) {
+    input.value = "0";
+  }
+}
+
 function roundToTenth(value) {
   return Math.round(value * 10) / 10;
 }
@@ -211,6 +222,7 @@ function renderTargetCalculator() {
 
   if (directWater < 0) {
     const overBy = Math.abs(directWater);
+    updateText("targetDirectWater", "계산 불가");
     message.textContent = `현재 설정에서는 르방만으로도 목표 수분율을 넘어섭니다. ${formatWeight(overBy)} 만큼 초과하므로 르방량을 줄이거나 르방 뒤흐를 선택해 주세요.`;
     message.classList.add("warning");
     return;
@@ -326,7 +338,9 @@ function setupExtras() {
     const addButton = event.target.closest("[data-add-extra]");
     if (addButton) {
       const containerId = addButton.dataset.addExtra;
-      document.getElementById(containerId).appendChild(createExtraRow(containerId));
+      const row = createExtraRow(containerId);
+      document.getElementById(containerId).appendChild(row);
+      row.querySelector(".extra-name").focus();
       renderAll();
       return;
     }
@@ -344,7 +358,19 @@ function setupExtras() {
 
 function setupRecalculation() {
   document.addEventListener("input", renderAll);
-  document.addEventListener("change", renderAll);
+  document.addEventListener("change", (event) => {
+    const target = event.target;
+
+    if (target.matches('input[type="number"]')) {
+      normalizeNumberInput(target);
+    }
+
+    if (target.id === "convertSourceLevainType") {
+      document.getElementById("convertTargetLevainType").value = getOppositeLevainType(target.value);
+    }
+
+    renderAll();
+  });
 }
 
 setupExtras();
